@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "react-hot-toast";
 import * as z from "zod";
 
 import { NoResultsMessage, WelcomeMessage } from "@/components/Message";
@@ -61,7 +62,7 @@ export default function Home() {
 
       return json;
     } catch (error) {
-      throw new Error(error as string);
+      toast.error("Something went wrong, please try again later");
     }
   };
 
@@ -72,14 +73,18 @@ export default function Home() {
       );
       const json = await res.json();
 
-      const userPromises = json.items.slice(0, 5).map((item: User) => {
-        return getUserDetails(item.login);
-      });
+      if (Array.isArray(json.items)) {
+        const userPromises = json.items.slice(0, 5).map((item: User) => {
+          return getUserDetails(item.login);
+        });
 
-      const userDetails = await Promise.all(userPromises);
-      setUsers(userDetails.filter((user) => user !== undefined) as User[]);
+        const userDetails = await Promise.all(userPromises);
+        setUsers(userDetails.filter((user) => user !== undefined) as User[]);
+      } else {
+        toast.error("Something went wrong, please try again later");
+      }
     } catch (error) {
-      throw new Error(error as string);
+      toast.error("Something went wrong, please try again later");
     }
   };
 
@@ -104,7 +109,9 @@ export default function Home() {
           <Button
             type="submit"
             className="w-full"
-            disabled={form.getValues("username") === ""}
+            disabled={
+              form.getValues("username") === "" || form.formState.isSubmitting
+            }
             isLoading={form.formState.isSubmitting}
           >
             Search
